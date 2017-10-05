@@ -1,0 +1,397 @@
+---
+title: "SF-seq assignment"
+author: "David Ho"
+date: "9/27/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(pander)  #nice looking tables
+library(plyr)    #package for subsetting big data.frames
+library(png)
+library(grid)
+library(gridExtra)
+
+```
+
+<br>
+
+#### The files I am working with are:
+
+```
+David   24_4A_control   34_4H_both
+```
+
+<br>
+
+### Part 1 – SF-Seq read quality score distributions
+
+#### Using FastQC on Talapas, produce plots of quality score distributions for forward and reverse reads. Also, produce plots of the per-base N content, and comment on whether or not they are consistent with the quality score plots.
+
+
+The version of `FastQC` we are using is: `FastQC v0.11.5`
+
+```
+time fastqc -o /home/dho/Bi624/assignments/SF_seq/fastqc_output/ --noextract -f fastq /home/dho/Bi624/assignments/SF_seq/seq_files/*
+```
+
+Separated by <font color=red>red</font> headers, we are looking at (1) per-base quality score, (2) distribution of average quality score per read, and (3) per-base N content:
+
+<br>
+
+### <font color=red>1. per-base quality score</font>
+
+**24_4A_control**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](24_4A_R1_control_per_bp.png) 
+
+**R2**
+
+![](24_4A_R2_control_per_bp.png)
+
+**Plots from my script**
+
+```{r echo=FALSE}
+R1_24 = read.table("part_1_files/24_4A_control_S18_L008_R1_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+R2_24 = read.table("part_1_files/24_4A_control_S18_L008_R2_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+R1_34 = read.table("part_1_files/34_4H_both_S24_L008_R1_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+R2_34 = read.table("part_1_files/34_4H_both_S24_L008_R2_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+plot(R1_24[,1], 
+     type="n", 
+     ylim=c(0,40),
+     ylab="Mean quality score",
+     xlab="Bp position",
+     main="Mean quality score for 24_4A_control files",
+     font.lab=2)
+lines(R1_24, col="red")
+lines(R2_24)
+legend(7, 32, legend=c("R1", "R2"), col=c("red", "black"), lty=1)
+```
+
+**34_4H_both**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](34_4H_both_R1_per_bp.png) 
+
+**R2**
+
+![](34_4H_both_R2_per_bp.png)
+
+**Plots from my script**
+
+```{r echo=FALSE}
+plot(R1_34[,1], 
+     type="n", 
+     ylim=c(0,40),
+     ylab="Mean quality score",
+     xlab="Bp position",
+     main="Mean quality score for 34_4H_both files",
+     font.lab=2)
+lines(R1_34, col="red")
+lines(R2_34)
+legend(7, 32, legend=c("R1", "R2"), col=c("red", "black"), lty=1)
+```
+<br>
+
+### <font color=red>2. distribution of average quality score per read</font>
+
+**24_4A_control**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](24_4A_R1_per_read.png)
+
+**R2**
+
+![](24_4A_R2_per_read.png)
+
+
+**My script**
+
+**R1**
+
+```{r echo=FALSE, warning=FALSE}
+R1_24_freq = read.delim("part_1_files/24_4A_control_S18_L008_R1_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R2_24_freq = read.delim("part_1_files/24_4A_control_S18_L008_R2_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R1_34_freq = read.delim("part_1_files/34_4H_both_S24_L008_R1_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R2_34_freq = read.delim("part_1_files/34_4H_both_S24_L008_R2_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R1_24_freq$bin = cut(R1_24_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R1_24_new = aggregate(Frequency ~ bin, data=R1_24_freq, sum)
+barplot(R1_24_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 24_4A_R1",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+**R2**
+
+```{r echo=FALSE}
+R2_24_freq$bin = cut(R2_24_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R2_24_new = aggregate(Frequency ~ bin, data=R2_24_freq, sum)
+barplot(R2_24_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 24_4A_R2",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+**34_4H_both**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](34_4H_R1_per_read.png)
+
+**R2**
+
+![](34_4H_R2_per_read.png)
+
+**My script**
+
+**R1**
+
+```{r echo=FALSE}
+R1_34_freq$bin = cut(R1_34_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R1_34_new = aggregate(Frequency ~ bin, data=R1_34_freq, sum)
+barplot(R1_34_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 34_4H_R1",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+**R2**
+
+```{r echo=FALSE}
+R2_34_freq$bin = cut(R2_34_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R2_34_new = aggregate(Frequency ~ bin, data=R2_34_freq, sum)
+barplot(R2_34_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 34_4H_R2",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+<br>
+
+
+### <font color=red>3. per-base N content</font>
+
+**Plots from FastQC**
+
+**24_4A_R1**
+
+![](24_4A_R1_control_N.png)
+
+**24_4A_R2**
+
+![](24_4A_R2_control_N.png)
+
+**34_4H_R1**
+
+![](34_4H_both_R1_N.png)
+
+**34_4H_R2**
+
+![](34_4H_both_R2_N.png)
+
+<br>
+
+The time it took to run four files with `FastQC` and my own script:
+
+|     | FastQC     | My script  |
+|---- |------------| -----------|
+|real	| 5m31.513s  | 90m52.311s |
+|user	| 5m19.604s  | 90m49.511s |
+|sys  | 0m22.280s  | 0m4.631s   |
+
+<br>
+
+The plots generated from `FastQC` and my own script for the mean quality score per bp position look similar. I changed the axes of my own plots from 0-40 so that it matched what `FastQC` outputs. Similarly, when comparing the distribution of avg quality scores among all of the reads, there were similar results between `FastQC` and my own script. I binned the quality scores in my plots, but the overall trend in that the majority of the reads have an average high quality score (35-40). 
+
+In all 4 files, there is a small percentage reads that had Ns at the beginning. This is consistent with the lower quality scores at those positions as well. Overall, `FastQC` was much quicker to run (5:31 v 90:52) and not only did it generate mean scores/bp position, N% content, but also GC content, sequence length distribution, and much more, in the same amount of time (along with plots). My script only generates values in which I needed to import into R in order to plot. One reason `FastQC` is quicker is because it utilizes Java instead of Python and can be multi-threaded. My script probbably wasn't written to output the data I want efficiently either (see `my_qual_script.py`).
+
+<br>
+
+### Part 2 – Adaptor trimming comparison
+
+<br>
+
+#### 3. Look into the adaptor trimming options for `cutadapt`, `process_shortreads`, and `Trimmomatic` (all on Talapas), and briefly describe the differences. Pick one of these to properly trim adapter sequences. Use default settings. What proportion of reads (both forward and reverse) was trimmed?
+
+<br>
+
+##### What are the three programs to compare?
+
+**cutadapt**
+```
+Homepage: http://opensource.scilifelab.se/projects/cutadapt/
+
+Cutadapt finds and removes adapter sequences, primers, poly-A tails and
+       other types of unwanted sequence from your high-throughput sequencing reads.
+```
+
+Example of `cutadapt` with our data. `-A` and `-p` arguments indicates that the input files are paired:
+```
+ml easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132  cutadapt
+
+dir=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT -o R1_24.fastq -p R2_24.fastq $dir/24_4A_control_S18_L008_R1_001.fastq.gz $dir/24_4A_control_S18_L008_R2_001.fastq.gz
+```
+
+To load on Talapas:
+```
+$ ml easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132  cutadapt
+```
+
+The version on Talapas is: `1.14`
+
+<br>
+
+**Trimmomatic**
+
+```
+Description:
+      Trimmomatic performs a variety of useful trimming tasks for illumina
+      paired-end and single ended data.The selection of trimming steps and
+      their associated parameters are supplied on the command line. 
+```
+
+To load on Talapas:
+```
+$ ml easybuild Trimmomatic
+```
+
+To execute:
+```
+To execute Trimmomatic run: java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar
+```
+
+<br>
+
+**process_shortreads**
+
+To load on Talapas:
+```
+$ ml slurm easybuild intel/2017a Stacks/1.46
+```
+
+The version on Talapas is: `1.46`
+
+<br>
+
+One of the biggest difference between the three programs are the languages they are written in. `cutadapt` uses Python, `process_shortreads` uses C++ & Perl, and `Trimmomatic` uses Java. From reading various documentations and articles, it seems like between `Trimmomatic` and `cutadapt`, the former is quicker at performs its task. The input/arguments varies between the programs. For example, `Trimmomatic` requires adapter sequences to be input as `fasta` files, while the other two has the user input the queried sequence right in the command line. All programs have the ability to adjust the tolerance for mismatches. 
+
+<br>
+
+For the following adapter 
+
+<br>
+
+##### Sanity check: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.
+
+<br>
+
+#### 4. Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.
+
+<br>
+
+#### 5. Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.
+
+<br>
+
+### Part 3 – rRNA reads and strand-specificity
+
+<br>
+
+#### 6. Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.
+
+Download noncoding RNA sequences from Ensembl and filter for rRNA sequences:
+```
+$ awk '!/^>/ { printf "%s", $0; n = "\n" } /^>/ { print n $0; n = "" } END { printf "%s", n }' Mus_musculus.GRCm38.ncrna.fa | grep "rRNA" -A 1 | grep -v "^--" > mouse_rRNA.fa
+
+$ grep "^>" mouse_rRNA.fa | wc -l
+     358
+```
+
+There are 358 rRNA sequences.
+
+Use this mouse-rRNA fasta file to generate a `gsnap` database and do some alignment:
+```
+module use /projects/ebb/modules/all/Core
+module load intel/2017a GMAP-GSNAP
+
+dir=/home/dho/Bi624/assignments/SF_seq/rRNA
+
+# -D is the directory we want output to end up in, -d name of the mapping file
+
+/usr/bin/time -v gmap_build -D $dir/ -d mouse_rRNA -k 15 $dir/mouse_rRNA.fa
+
+#For paired-end reads, the two corresponding FASTQ files should be given as command-line arguments in pairs
+
+seq=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+/usr/bin/time -v gsnap --gunzip -D $dir/ -d mouse_rRNA -B 4 -m 20 -t 8 -O --split-output gsnap_24 -A sam $seq/24_4A_control_S18_L008_R1_001.fastq.gz $seq/24_4A_control_S18_L008_R2_001.fastq.gz
+
+/usr/bin/time -v gsnap --gunzip -D $dir/ -d mouse_rRNA -B 4 -m 20 -t 8 -O --split-output gsnap_34 -A sam $seq/34_4H_both_S24_L008_R1_001.fastq.gz $seq/34_4H_both_S24_L008_R2_001.fastq.gz
+```
+
+<br>
+
+```
+$ cat gsnap_24.nomapping | grep -v "^@" | cut -d "       " -f 1| sort | uniq -c | wc -l
+10084174
+```
+
+```
+$ cat gsnap_34.nomapping | grep -v "^@" | cut -d "       " -f 1| sort | uniq -c | wc -l
+8987301
+```
+
+#### 7. Demonstrate convincingly that the SF-Seq data are from “strand-specific” RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.
