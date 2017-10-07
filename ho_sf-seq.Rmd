@@ -25,7 +25,7 @@ library(gridExtra)
 David   24_4A_control   34_4H_both
 ```
 
-How many sequences are in there?
+How many paired reads are in there?
 ```
 $ wc -l 24_4A_control_S18_L008_R1_001.fastq
 42063496 24_4A_control_S18_L008_R1_001.fastq
@@ -268,7 +268,7 @@ The time it took to run four files with `FastQC` and my own script:
 
 The plots generated from `FastQC` and my own script for the mean quality score per bp position look similar. I changed the axes of my own plots from 0-40 so that it matched what `FastQC` outputs. Similarly, when comparing the distribution of avg quality scores among all of the reads, there were similar results between `FastQC` and my own script. I binned the quality scores in my plots, but the overall trend in that the majority of the reads have an average high quality score (35-40). 
 
-In all 4 files, there is a small percentage reads that had Ns at the beginning. This is consistent with the lower quality scores at those positions as well. Overall, `FastQC` was much quicker to run (5:31 v 90:52) and not only did it generate mean scores/bp position, N% content, but also GC content, sequence length distribution, and much more, in the same amount of time (along with plots). My script only generates values in which I needed to import into R in order to plot. One reason `FastQC` is quicker is because it utilizes Java instead of Python and can be multi-threaded. My script probably wasn't written to output the data I want efficiently either (see `my_qual_script.py`).
+In all 4 files, there is a small percentage reads that had Ns at the beginning. This is consistent with the lower quality scores at those positions as well. Overall, `FastQC` was much quicker to run (5:31 v 90:52) and not only did it generate mean scores/bp position, N% content, but also GC content, sequence length distribution, and much more, in the same amount of time (along with plots). My script only generates values in which I needed to import into R in order to plot. One reason `FastQC` is quicker is because it utilizes Java instead of Python and can be multi-threaded. My script probably wasn't written to output the data I want efficiently either (see `my_qual_script.py` in `scripts/`).
 
 <br>
 
@@ -296,7 +296,7 @@ ml easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132  cutadapt
 
 dir=/home/dho/Bi624/assignments/SF_seq/seq_files
 
-cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT -o R1_24.fastq -p R2_24.fastq $dir/24_4A_control_S18_L008_R1_001.fastq.gz $dir/24_4A_control_S18_L008_R2_001.fastq.gz
+cutadapt -a ADAPTER1 -A ADAPTER2 -o R1_24.fastq -p R2_24.fastq $dir/24_4A_control_S18_L008_R1_001.fastq.gz $dir/24_4A_control_S18_L008_R2_001.fastq.gz
 ```
 
 To load on Talapas:
@@ -327,7 +327,7 @@ To execute:
 To execute Trimmomatic run: java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar
 ```
 
-Version on Talapas: `0.36`
+The version on Talapas: `0.36`
 
 <br>
 
@@ -346,7 +346,7 @@ One of the biggest difference between the three programs are the languages they 
 
 <br>
 
-For the following adapter trimming, I used `process_shortreads`.
+##### For the following adapter trimming, I used `process_shortreads`.
 
 The adapters used were:
 
@@ -354,19 +354,11 @@ R1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
 
 R2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
 
-```
-ml slurm easybuild intel/2017a Stacks/1.46
+See `process_sreads_24_34.srun` in `scripts/` for the commands.
 
-dir=/home/dho/Bi624/assignments/SF_seq/seq_files
+How many records were retained after trimmed (see files in `part2_log_files/`):
 
-/usr/bin/time -v process_shortreads -i gzfastq -1 $dir/24_4A_control_S18_L008_R1_001.fastq.gz -2 $dir/24_4A_control_S18_L008_R2_001.fastq.gz -y fastq -o ./ --adapter_1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC --adapter_2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
-
-/usr/bin/time -v process_shortreads -i gzfastq -1 $dir/34_4H_both_S24_L008_R1_001.fastq.gz -2 $dir/34_4H_both_S24_L008_R2_001.fastq.gz -y fastq -o ./ --adapter_1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC --adapter_2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
-```
-
-How many records were retained after trimmed (see `.log` files in `part2_log_files`):
-
-| Library | Pre-trim reads(R1+R2) | Trimmed reads | % trimmed |
+| Library | Pre-trim reads (R1+R2) | Trimmed reads | % trimmed |
 |----------|---------|-----------|-------|
 |24_4A_control |21031748 | 228960 | `r 228960/21031748 * 100` |
 |34_4H_both | 18081194 | 1177277 | `r 1177277/18081194 * 100`|
@@ -390,8 +382,7 @@ $ grep "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT" 34_4H_both_S24_L008_R2_001.fastq | wc
 137879
 ```
 
-When using `grep` for the whole adapter sequence, I saw that for the most part, the adapters were found towards the end of the sequence reads.
-
+When using `grep` for the whole adapter sequence, I saw that for the most part, the adapters were found towards the end of the sequence reads. Because I looked for the whole adapter sequence and not just parts of it, I got fewer hits than the amount `process_shortreads` trimmed.
 
 <br>
 
@@ -440,9 +431,25 @@ lines(smoothingSpline2, col="blue", lwd=0.5)
 legend(30,1000000, legend=c("R1", "R2"), col=c("Red", "Blue"), lty=1)
 ```
 
+The distribution for the 4 files range from about 30 to 101, indicating that some of the reads had the whole adapter in the read (a very small propotion) and some of the reads had parts of the adapters. 
+
 <br>
 
 #### 5. Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.
+
+The following are electropherograms of the two libraries:
+
+##### 24_4A_control
+
+![](frag_24.png)
+
+##### 34_4H_both 
+
+![](frag_34.png)
+
+We sized selected our inserts during the preparation for 400-500bp inserts, but from these two electropherograms, we can see that the majority of the molecules were around 331-377 bp. The distribution of the molecule size includes both the adapters & inserts.
+
+Our adapters are 140bp in total and we are sequencing 101 bp, so anything library molecule under 241bp should contain adapters. For both electropherograms, we see that there is an area under the curve that is less than 241bp. I'm surprised that `process_shortreads` only trimmed 1.09% and 6.51% for the 24_4A_control and 34_4H_both libraries, respectively. I do not think the trimming results is consistent with what is seen from the fragment analyzer. I also only used the default settings so adding more arguments to make the trimming more stringent might increase the amount of trimming.
 
 <br>
 
@@ -462,25 +469,8 @@ $ grep "^>" mouse_rRNA.fa | wc -l
 
 There are 358 rRNA sequences.
 
-Use this mouse-rRNA fasta file to generate a `gsnap` database and do some alignment:
-```
-module use /projects/ebb/modules/all/Core
-module load intel/2017a GMAP-GSNAP
+I used this mouse-rRNA fasta file to generate a database and did some alignment with `gsnap` (see `mouse_rRNA.srun` in `scripts/`)
 
-dir=/home/dho/Bi624/assignments/SF_seq/rRNA
-
-# -D is the directory we want output to end up in, -d name of the mapping file
-
-/usr/bin/time -v gmap_build -D $dir/ -d mouse_rRNA -k 15 $dir/mouse_rRNA.fa
-
-#For paired-end reads, the two corresponding FASTQ files should be given as command-line arguments in pairs
-
-seq=/home/dho/Bi624/assignments/SF_seq/seq_files
-
-/usr/bin/time -v gsnap --gunzip -D $dir/ -d mouse_rRNA -B 4 -m 20 -t 8 -O --split-output gsnap_24 -A sam $seq/24_4A_control_S18_L008_R1_001.fastq.gz $seq/24_4A_control_S18_L008_R2_001.fastq.gz
-
-/usr/bin/time -v gsnap --gunzip -D $dir/ -d mouse_rRNA -B 4 -m 20 -t 8 -O --split-output gsnap_34 -A sam $seq/34_4H_both_S24_L008_R1_001.fastq.gz $seq/34_4H_both_S24_L008_R2_001.fastq.gz
-```
 
 <br>
 
@@ -539,7 +529,7 @@ T
 
 From all of those files, there were more reads that contain poly-Ts than poly-As. 
 
-Another approach I used was creating a `gmap` of the mouse cDNA and aligning the reads so that we get a `gff` file. The GFF file has a field that contains information about the "stranded-ness," whether it is a `+` or `-`. If the libraries are stranded, we should see that a majority of reads from one file containing `+` and the other `-`.
+Another approach I used was creating a `gmap` of the mouse cDNA and aligning the reads so that we get a `gff` file (see `cDNA_24.srun` & `cDNA_34.srun` in `scripts/`). The GFF file has a field that contains information about the "stranded-ness," whether it is a `+` or `-`. If the libraries are stranded, we should see that a majority of reads from one file containing `+` and the other `-`.
 
 
 ```
