@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+#SBATCH --partition=long        ### Partition (like a queue in PBS)
+#SBATCH --job-name=my_script      ### Job Name
+#SBATCH --output=my_script.out         ### File in which to store job output
+#SBATCH --error=my_script.err          ### File in which to store job error messages
+#SBATCH --time=0-23:00:00       ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1               ### Node count required for the job
+#SBATCH --ntasks-per-node=28     ### Number of tasks to be launched per Node
+
+module load easybuild intel/2017a Python/3.6.1
+pip list installed | grep numpy
+
+time python3 my_qual_script.py -f ./seq_files/24_4A_control_S18_L008_R1_001.fastq.gz ./seq_files/24_4A_control_S18_L008_R2_001.fastq.gz ./seq_files/34_4H_both_S24_L008_R1_001.fastq.gz ./seq_files/34_4H_both_S24_L008_R2_001.fastq.gz
+

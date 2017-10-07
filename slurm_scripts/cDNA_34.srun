@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH --job-name=cDNA_34_map     ### Job Name
+#SBATCH --output=cDNA_34_map.out   ### File in which to store job output
+#SBATCH --error=cDNA_34_map.err    ### File in which to store job error messages
+#SBATCH --time=0-23:00:00            ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1                    ### Node count required for the job
+#SBATCH --ntasks-per-node=28         ### Number of tasks to be launched per Node
+
+module use /projects/ebb/modules/all/Core
+module load intel/2017a GMAP-GSNAP
+
+dir=/home/dho/Bi624/assignments/SF_seq/cDNA
+
+seq=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+/usr/bin/time -v gmap -D $dir/ -d mouse_cDNA -B 4 -t 8 -O -f 3 $seq/34_4H_both_S24_L008_R1_001.fastq > 34_R1_GFF.gff
+
+/usr/bin/time -v gmap -D $dir/ -d mouse_cDNA -B 4 -t 8 -O -f 3 $seq/34_4H_both_S24_L008_R2_001.fastq > 34_R2_GFF.gff

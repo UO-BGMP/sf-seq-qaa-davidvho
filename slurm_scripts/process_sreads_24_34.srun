@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH --job-name=process_sreads      ### Job Name
+#SBATCH --output=process_sreads.out         ### File in which to store job output
+#SBATCH --error=process_sreads.err          ### File in which to store job error messages
+#SBATCH --time=0-23:00:00       ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1               ### Node count required for the job
+#SBATCH --ntasks-per-node=28     ### Number of tasks to be launched per Node
+
+ml slurm easybuild intel/2017a Stacks/1.46
+
+dir=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+/usr/bin/time -v process_shortreads -i gzfastq -1 $dir/24_4A_control_S18_L008_R1_001.fastq.gz -2 $dir/24_4A_control_S18_L008_R2_001.fastq.gz -y fastq -o ./ --adapter_1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC --adapter_2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+#!/bin/bash
+#SBATCH --job-name=34_process_sreads      ### Job Name
+#SBATCH --output=34_process_sreads.out         ### File in which to store job output
+#SBATCH --error=34_process_sreads.err          ### File in which to store job error messages
+#SBATCH --time=0-23:00:00       ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1               ### Node count required for the job
+#SBATCH --ntasks-per-node=28     ### Number of tasks to be launched per Node
+
+ml slurm easybuild intel/2017a Stacks/1.46
+
+dir=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+/usr/bin/time -v process_shortreads -i gzfastq -1 $dir/34_4H_both_S24_L008_R1_001.fastq.gz -2 $dir/34_4H_both_S24_L008_R2_001.fastq.gz -y fastq -o ./ --adapter_1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC --adapter_2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
