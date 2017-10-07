@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --job-name=cDNA_24_R1_map     ### Job Name
+#SBATCH --output=cDNA_24_R1_map.out   ### File in which to store job output
+#SBATCH --error=cDNA_24_R1_map.err    ### File in which to store job error messages
+#SBATCH --time=0-23:00:00            ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1                    ### Node count required for the job
+#SBATCH --ntasks-per-node=28         ### Number of tasks to be launched per Node
+
+module use /projects/ebb/modules/all/Core
+module load intel/2017a GMAP-GSNAP
+
+dir=/home/dho/Bi624/assignments/SF_seq/cDNA
+
+seq=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+/usr/bin/time -v gmap -D $dir/ -d mouse_cDNA -B 4 -t 8 -O -f 3 $seq/24_4A_control_S18_L008_R1_001.fastq > 24_R1_GFF.gff3
+#!/bin/bash
+#SBATCH --partition=long             ### Partition (like a queue in PBS)
+#SBATCH --job-name=cDNA_24_R1_map     ### Job Name
+#SBATCH --output=cDNA_24_R1_map.out   ### File in which to store job output
+#SBATCH --error=cDNA_24_R1_map.err    ### File in which to store job error messages
+#SBATCH --time=0-23:00:00            ### Wall clock time limit in Days-HH:MM:SS
+#SBATCH --nodes=1                    ### Node count required for the job
+#SBATCH --ntasks-per-node=28         ### Number of tasks to be launched per Node
+
+module use /projects/ebb/modules/all/Core
+module load intel/2017a GMAP-GSNAP
+
+dir=/home/dho/Bi624/assignments/SF_seq/cDNA
+
+# -D is the directory we want output to end up in, -d name of the mapping file
+
+/usr/bin/time -v gmap_build -D $dir/ -d mouse_cDNA $dir/Mus_musculus.GRCm38.cdna.all.fa
+
+#For paired-end reads, the two corresponding FASTQ files should be given as command-line arguments in pairs
+
+seq=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+
+/usr/bin/time -v gmap -D $dir/ -d mouse_cDNA -B 4 -t 8 -O -f 3 $seq/24_4A_control_S18_L008_R2_001.fastq > 24_R2_GFF.gff3

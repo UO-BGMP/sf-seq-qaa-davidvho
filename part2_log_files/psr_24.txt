@@ -1,0 +1,13 @@
+process_shortreads -i gzfastq -1 /home/dho/Bi624/assignments/SF_seq/seq_files/24_4A_control_S18_L008_R1_001.fastq.gz -2 /home/dho/Bi624/assignments/SF_seq/seq_files/24_4A_control_S18_L008_R2_001.fastq.gz -y fastq -o ./ --adapter_1 AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC --adapter_2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+process_shortreads version 1.46 executed 2017-10-06 16:09:00
+
+File	Retained Reads	Adapter Seq	Low Quality	Ambiguous Barcodes	Trimmed Reads	Orphaned paired-end reads	Total
+24_4A_control_S18_L008_R1_001.fastq.gz	20933704	327004	0	0	228960	0	21031748
+
+Total Sequences	21031748
+Reads containing adapter sequence	327004
+Ambiguous Barcodes	0
+Low Quality	0
+Trimmed Reads	228960
+Orphaned Paired-ends	0
+Retained Reads	20933704

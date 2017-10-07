@@ -1,0 +1,574 @@
+---
+title: "SF-seq assignment"
+author: "David Ho"
+date: "9/27/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.align = "center",
+                      options(scipen=999, digits=2))
+library(knitr)
+library(pander)  #nice looking tables
+library(plyr)    #package for subsetting big data.frames
+library(png)
+library(grid)
+library(gridExtra)
+```
+
+<br>
+
+#### The files I am working with are:
+
+```
+David   24_4A_control   34_4H_both
+```
+
+How many paired reads are in there?
+```
+$ wc -l 24_4A_control_S18_L008_R1_001.fastq
+42063496 24_4A_control_S18_L008_R1_001.fastq
+
+$ wc -l 34_4H_both_S24_L008_R1_001.fastq  
+36162388 34_4H_both_S24_L008_R1_001.fastq
+```
+
+**24_4A_control**: `r 42063496/4`
+
+**34_4H_both**: `r 36162388/4`
+
+<br>
+
+### Part 1 – SF-Seq read quality score distributions
+
+#### Using FastQC on Talapas, produce plots of quality score distributions for forward and reverse reads. Also, produce plots of the per-base N content, and comment on whether or not they are consistent with the quality score plots.
+
+
+The version of `FastQC` we are using is: `FastQC v0.11.5`
+
+```
+time fastqc -o /home/dho/Bi624/assignments/SF_seq/fastqc_output/ --noextract -f fastq /home/dho/Bi624/assignments/SF_seq/seq_files/*
+```
+
+Separated by <font color=red>red</font> headers, we are looking at (1) per-base quality score, (2) distribution of average quality score per read, and (3) per-base N content:
+
+<br>
+
+### <font color=red>1. per-base quality score</font>
+
+**24_4A_control**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](24_4A_R1_control_per_bp.png) 
+
+**R2**
+
+![](24_4A_R2_control_per_bp.png)
+
+**Plots from my script**
+
+```{r echo=FALSE}
+R1_24 = read.table("part_1_files/24_4A_control_S18_L008_R1_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+R2_24 = read.table("part_1_files/24_4A_control_S18_L008_R2_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+R1_34 = read.table("part_1_files/34_4H_both_S24_L008_R1_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+R2_34 = read.table("part_1_files/34_4H_both_S24_L008_R2_001.fastq.gz_mean_score_bp.txt", sep="\t", header = TRUE)
+
+plot(R1_24[,1], 
+     type="n", 
+     ylim=c(0,40),
+     ylab="Mean quality score",
+     xlab="Bp position",
+     main="Mean quality score for 24_4A_control files",
+     font.lab=2)
+lines(R1_24, col="red")
+lines(R2_24)
+legend(7, 32, legend=c("R1", "R2"), col=c("red", "black"), lty=1)
+```
+
+**34_4H_both**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](34_4H_both_R1_per_bp.png) 
+
+**R2**
+
+![](34_4H_both_R2_per_bp.png)
+
+**Plots from my script**
+
+```{r echo=FALSE}
+plot(R1_34[,1], 
+     type="n", 
+     ylim=c(0,40),
+     ylab="Mean quality score",
+     xlab="Bp position",
+     main="Mean quality score for 34_4H_both files",
+     font.lab=2)
+lines(R1_34, col="red")
+lines(R2_34)
+legend(7, 32, legend=c("R1", "R2"), col=c("red", "black"), lty=1)
+```
+<br>
+
+### <font color=red>2. distribution of average quality score per read</font>
+
+**24_4A_control**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](24_4A_R1_per_read.png)
+
+**R2**
+
+![](24_4A_R2_per_read.png)
+
+
+**My script**
+
+**R1**
+
+```{r echo=FALSE, warning=FALSE}
+R1_24_freq = read.delim("part_1_files/24_4A_control_S18_L008_R1_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R2_24_freq = read.delim("part_1_files/24_4A_control_S18_L008_R2_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R1_34_freq = read.delim("part_1_files/34_4H_both_S24_L008_R1_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R2_34_freq = read.delim("part_1_files/34_4H_both_S24_L008_R2_001.fastq.gz_freq.txt", row.names = NULL, col.names = c("Mean", "Frequency"))
+
+R1_24_freq$bin = cut(R1_24_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R1_24_new = aggregate(Frequency ~ bin, data=R1_24_freq, sum)
+barplot(R1_24_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 24_4A_R1",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+**R2**
+
+```{r echo=FALSE}
+R2_24_freq$bin = cut(R2_24_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R2_24_new = aggregate(Frequency ~ bin, data=R2_24_freq, sum)
+barplot(R2_24_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 24_4A_R2",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+**34_4H_both**
+
+**Plots from `FastQC`**
+
+**R1**
+
+![](34_4H_R1_per_read.png)
+
+**R2**
+
+![](34_4H_R2_per_read.png)
+
+**My script**
+
+**R1**
+
+```{r echo=FALSE}
+R1_34_freq$bin = cut(R1_34_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R1_34_new = aggregate(Frequency ~ bin, data=R1_34_freq, sum)
+barplot(R1_34_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 34_4H_R1",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+**R2**
+
+```{r echo=FALSE}
+R2_34_freq$bin = cut(R2_34_freq$Mean,breaks = c(10,15,20,25,30,35,41))
+R2_34_new = aggregate(Frequency ~ bin, data=R2_34_freq, sum)
+barplot(R2_34_new$Frequency, 
+        space=0, 
+        width=1, 
+        xlim=c(0,6),
+        ylab="Count",
+        xlab="Average quality score/read",
+        col="lightblue",
+        main="Distribution of avg read quality scores 34_4H_R2",
+        cex.axis = 0.5
+)
+axis(1, at = 0:6, labels = c(10,15,20,25,30,35,41), cex.axis=0.6)
+```
+
+<br>
+
+
+### <font color=red>3. per-base N content</font>
+
+**Plots from FastQC**
+
+**24_4A_R1**
+
+![](24_4A_R1_control_N.png)
+
+**24_4A_R2**
+
+![](24_4A_R2_control_N.png)
+
+**34_4H_R1**
+
+![](34_4H_both_R1_N.png)
+
+**34_4H_R2**
+
+![](34_4H_both_R2_N.png)
+
+<br>
+
+The time it took to run four files with `FastQC` and my own script:
+
+|     | FastQC     | My script  |
+|---- |------------| -----------|
+|real	| 5m31.513s  | 90m52.311s |
+|user	| 5m19.604s  | 90m49.511s |
+|sys  | 0m22.280s  | 0m4.631s   |
+
+<br>
+
+The plots generated from `FastQC` and my own script for the mean quality score per bp position look similar. I changed the axes of my own plots from 0-40 so that it matched what `FastQC` outputs. Similarly, when comparing the distribution of avg quality scores among all of the reads, there were similar results between `FastQC` and my own script. I binned the quality scores in my plots, but the overall trend in that the majority of the reads have an average high quality score (35-40). 
+
+In all 4 files, there is a small percentage reads that had Ns at the beginning. This is consistent with the lower quality scores at those positions as well. Overall, `FastQC` was much quicker to run (5:31 v 90:52) and not only did it generate mean scores/bp position, N% content, but also GC content, sequence length distribution, and much more, in the same amount of time (along with plots). My script only generates values in which I needed to import into R in order to plot. One reason `FastQC` is quicker is because it utilizes Java instead of Python and can be multi-threaded. My script probably wasn't written to output the data I want efficiently either (see `my_qual_script.py` in `scripts/`).
+
+<br>
+
+### Part 2 – Adaptor trimming comparison
+
+<br>
+
+#### 3. Look into the adaptor trimming options for `cutadapt`, `process_shortreads`, and `Trimmomatic` (all on Talapas), and briefly describe the differences. Pick one of these to properly trim adapter sequences. Use default settings. What proportion of reads (both forward and reverse) was trimmed?
+
+<br>
+
+##### What are the three programs to compare?
+
+**cutadapt**
+```
+Homepage: http://opensource.scilifelab.se/projects/cutadapt/
+
+Cutadapt finds and removes adapter sequences, primers, poly-A tails and
+       other types of unwanted sequence from your high-throughput sequencing reads.
+```
+
+Example of `cutadapt` with our data. `-A` and `-p` arguments indicates that the input files are paired:
+```
+ml easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132  cutadapt
+
+dir=/home/dho/Bi624/assignments/SF_seq/seq_files
+
+cutadapt -a ADAPTER1 -A ADAPTER2 -o R1_24.fastq -p R2_24.fastq $dir/24_4A_control_S18_L008_R1_001.fastq.gz $dir/24_4A_control_S18_L008_R2_001.fastq.gz
+```
+
+To load on Talapas:
+```
+$ ml easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132  cutadapt
+```
+
+The version on Talapas is: `1.14`
+
+<br>
+
+**Trimmomatic**
+
+```
+Description:
+      Trimmomatic performs a variety of useful trimming tasks for illumina
+      paired-end and single ended data.The selection of trimming steps and
+      their associated parameters are supplied on the command line. 
+```
+
+To load on Talapas:
+```
+$ ml easybuild Trimmomatic
+```
+
+To execute:
+```
+To execute Trimmomatic run: java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.36.jar
+```
+
+The version on Talapas: `0.36`
+
+<br>
+
+**process_shortreads**
+
+To load on Talapas:
+```
+$ ml slurm easybuild intel/2017a Stacks/1.46
+```
+
+The version on Talapas is: `1.46`
+
+<br>
+
+One of the biggest difference between the three programs are the languages they are written in. `cutadapt` uses Python, `process_shortreads` uses C++ & Perl, and `Trimmomatic` uses Java. `process_shortreads` also dumps low quality reads into a file (orphaned). From reading various documentations and articles, it seems like between `Trimmomatic` and `cutadapt`, the former is quicker at performs its task. The input/arguments varies between the programs. For example, `Trimmomatic` requires adapter sequences to be input as `fasta` files, while the other two has the user input the queried sequence right in the command line. All programs have the ability to adjust the tolerance for mismatches. 
+
+<br>
+
+##### For the following adapter trimming, I used `process_shortreads`.
+
+The adapters used were:
+
+R1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+
+R2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+See `process_sreads_24_34.srun` in `scripts/` for the commands.
+
+How many records were retained after trimmed (see files in `part2_log_files/`):
+
+| Library | Pre-trim reads (R1+R2) | Trimmed reads | % trimmed |
+|----------|---------|-----------|-------|
+|24_4A_control |21031748 | 228960 | `r 228960/21031748 * 100` |
+|34_4H_both | 18081194 | 1177277 | `r 1177277/18081194 * 100`|
+
+
+<br>
+
+##### Sanity check: Use your Unix skills to search for the adapter sequences in your datasets and confirm the expected sequence orientations.
+
+```
+$ grep "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC" 24_4A_control_S18_L008_R1_001.fastq | wc -l
+7417
+
+$ grep "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT" 24_4A_control_S18_L008_R2_001.fastq | wc -l
+8484
+
+$ grep "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC" 34_4H_both_S24_L008_R1_001.fastq | wc -l
+129475
+
+$ grep "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT" 34_4H_both_S24_L008_R2_001.fastq | wc -l
+137879
+```
+
+When using `grep` for the whole adapter sequence, I saw that for the most part, the adapters were found towards the end of the sequence reads. Because I looked for the whole adapter sequence and not just parts of it, I got fewer hits than the amount `process_shortreads` trimmed.
+
+<br>
+
+#### 4. Plot the trimmed read length distributions for both forward and reverse reads (on the same plot). If necessary, consult Assignment 5 (Block 1) from Bi 623 to refresh your memory.
+
+```{r, echo=FALSE}
+R1_24_trimmed = read.table("/Users/davidho/Desktop/U_O/Fall_17/BI_624_Genomic_Lab/assignments/PS1/trimmed_freq/24_R1.txt", header=FALSE, col.names = c("Frequency", "Sequence_length"))
+
+R2_24_trimmed = read.table("/Users/davidho/Desktop/U_O/Fall_17/BI_624_Genomic_Lab/assignments/PS1/trimmed_freq/24_R2.txt", header=FALSE, col.names = c("Frequency", "Sequence_length"))
+
+R1_34_trimmed = read.table("/Users/davidho/Desktop/U_O/Fall_17/BI_624_Genomic_Lab/assignments/PS1/trimmed_freq/34_R1.txt", header=FALSE, col.names = c("Frequency", "Sequence_length"))
+
+R2_34_trimmed = read.table("/Users/davidho/Desktop/U_O/Fall_17/BI_624_Genomic_Lab/assignments/PS1/trimmed_freq/34_R2.txt", header=FALSE, col.names = c("Frequency", "Sequence_length"))
+
+
+#24
+plot(R1_24_trimmed$Sequence_length, R1_24_trimmed$Frequency, 
+     type="n", 
+     log="y",
+     xlab="Sequence length",
+     ylab="Frequency",
+     main="Distribution of sequence lengths after trimming \n (24_4A_control)"
+     )
+
+smoothingSpline = smooth.spline(R1_24_trimmed$Sequence_length, R1_24_trimmed$Frequency, spar=0.35)
+smoothingSpline2 = smooth.spline(R2_24_trimmed$Sequence_length, R2_24_trimmed$Frequency, spar=0.35)
+
+lines(smoothingSpline, col="red", lwd=0.7)
+lines(smoothingSpline2, col="blue", lwd=0.5)
+legend(30,1000000, legend=c("R1", "R2"), col=c("Red", "Blue"), lty=1)
+
+#34
+plot(R1_34_trimmed$Sequence_length, R1_34_trimmed$Frequency, 
+     type="n", 
+     log="y",
+     xlab="Sequence length",
+     ylab="Frequency",
+     main="Distribution of sequence lengths after trimming \n (34_4H_both)"
+     )
+
+smoothingSpline = smooth.spline(R1_34_trimmed$Sequence_length, R1_34_trimmed$Frequency, spar=0.35)
+smoothingSpline2 = smooth.spline(R2_34_trimmed$Sequence_length, R2_34_trimmed$Frequency, spar=0.35)
+
+lines(smoothingSpline, col="red", lwd=0.7)
+lines(smoothingSpline2, col="blue", lwd=0.5)
+legend(30,1000000, legend=c("R1", "R2"), col=c("Red", "Blue"), lty=1)
+```
+
+The distribution for the 4 files range from about 30 to 101, indicating that some of the reads had the whole adapter in the read (a very small propotion) and some of the reads had parts of the adapters. 
+
+<br>
+
+#### 5. Briefly describe whether the adaptor trimming results are consistent with the insert size distributions for your libraries. The size distribution information is in the Fragment Analyzer trace file on Github.
+
+The following are electropherograms of the two libraries:
+
+##### 24_4A_control
+
+![](frag_24.png)
+
+##### 34_4H_both 
+
+![](frag_34.png)
+
+We sized selected our inserts during the preparation for 400-500bp inserts, but from these two electropherograms, we can see that the majority of the molecules were around 331-377 bp. The distribution of the molecule size includes both the adapters & inserts.
+
+Our adapters are 140bp in total and we are sequencing 101 bp, so anything library molecule under 241bp should contain adapters. For both electropherograms, we see that there is an area under the curve that is less than 241bp. I'm surprised that `process_shortreads` only trimmed 1.09% and 6.51% for the 24_4A_control and 34_4H_both libraries, respectively. I do not think the trimming results is consistent with what is seen from the fragment analyzer. I also only used the default settings so adding more arguments to make the trimming more stringent might increase the amount of trimming.
+
+<br>
+
+### Part 3 – rRNA reads and strand-specificity
+
+<br>
+
+#### 6. Find publicly available mouse rRNA sequences and generate a gsnap database from them. Align the SF-Seq reads to your mouse rRNA database and report the proportion of reads that likely came from rRNAs.
+
+Download non-coding RNA sequences from Ensembl and filter for rRNA sequences:
+```
+$ awk '!/^>/ { printf "%s", $0; n = "\n" } /^>/ { print n $0; n = "" } END { printf "%s", n }' Mus_musculus.GRCm38.ncrna.fa | grep "rRNA" -A 1 | grep -v "^--" > mouse_rRNA.fa
+
+$ grep "^>" mouse_rRNA.fa | wc -l
+     358
+```
+
+There are 358 rRNA sequences.
+
+I used this mouse-rRNA fasta file to generate a database and did some alignment with `gsnap` (see `mouse_rRNA.srun` in `scripts/`)
+
+
+<br>
+
+Look at `.nomapping` files: how many reads did NOT align to rRNA:
+```
+$ cat gsnap_24.nomapping | grep -v "^@" | cut -d "       " -f 1| sort | uniq -c | wc -l
+10084174
+```
+
+```
+$ cat gsnap_34.nomapping | grep -v "^@" | cut -d "       " -f 1| sort | uniq -c | wc -l
+8987301
+```
+
+| Library | Total reads | % Aligned to rRNA |
+|---------|-----------------|------------------------------|
+|24_4A_control | 10515874 | `r 100 - (10084174 / 10515874 * 100)` |
+|34_4H_both    |  9040597 | `r 100 - (8987301 / 9040597 * 100)` |
+
+Interestingly, there were more reads that aligned to one of the libraries. One explanation for rRNA contamination could be during the library prep. We selected for poly-A tails but pipetting errors could have led to some rRNA being passed onto the next step as well.
+
+<br>
+
+#### 7. Demonstrate convincingly that the SF-Seq data are from “strand-specific” RNA-Seq libraries. There are a number of possible strategies to address this problem, but you need only implement one. Report your evidence in numeric and graphical (e.g. a plot) forms.
+
+<br>
+
+Because these are mRNA-seq libraries and our selection for the mRNA was an enrichment for poly-A tails, we would assume one of the files would have more poly-A than poly-Ts, and vice-versa.
+
+In this case, I considered any string of 15 or more As & Ts to be searched for:
+```
+$ for letter in A T; do echo $letter; grep -E -e "$letter{15,}" 24_4A_control_S18_L008_R1_001.fastq| wc -l; done
+A
+11124
+T
+15124
+
+$ for letter in A T; do echo $letter; grep -E -e "$letter{15,}" 24_4A_control_S18_L008_R2_001.fastq| wc -l; done
+A
+10647
+T
+31116
+
+$ for letter in A T; do echo $letter; grep -E -e "$letter{15,}" 34_4H_both_S24_L008_R1_001.fastq | wc -l; done
+A
+13693
+T
+25955
+
+$ for letter in A T; do echo $letter; grep -E -e "$letter{15,}" 34_4H_both_S24_L008_R2_001.fastq | wc -l; done
+A
+19221
+T
+24915
+```
+
+From all of those files, there were more reads that contain poly-Ts than poly-As. 
+
+Another approach I used was creating a `gmap` of the mouse cDNA and aligning the reads so that we get a `gff` file (see `cDNA_24.srun` & `cDNA_34.srun` in `scripts/`). The GFF file has a field that contains information about the "stranded-ness," whether it is a `+` or `-`. If the libraries are stranded, we should see that a majority of reads from one file containing `+` and the other `-`.
+
+
+```
+$ sed 1,2d 24_R1_GFF.gff3 | grep -v "##" | cut -f 7 | sort | uniq -c
+24581781 -
+ 658155 +
+
+$ sed 1,2d 24_R2_GFF.gff3 | grep -v "##" | cut -f 7 | sort | uniq -c
+ 637093 -
+24808586 +
+
+$ sed 1,2d 34_R1_GFF.gff | grep -v "##" | cut -f 7 | sort | uniq -c
+22635802 -
+1077677 +
+
+$ sed 1,2d 34_R2_GFF.gff | grep -v "##" | cut -f 7 | sort | uniq -c 
+1071286 -
+22733866 +
+```
+
+
+Graphical representation of the reads in a file determined `+` or `-`:
+```{r echo=FALSE, warning=FALSE, options(warn=-1)}
+strand = read.csv("stranded.csv", header=TRUE, stringsAsFactors = TRUE)
+
+strand$Library = as.factor(strand$Library)
+
+library(ggplot2)
+ggplot(strand, aes(x = interaction(Library, File), Reads, fill = Direc)) + 
+  geom_bar(stat="identity", position = "dodge") + 
+  scale_fill_brewer(palette = "Set1") +
+  theme_bw() +
+  labs(x = "Library & File") +
+  scale_fill_discrete(name="Strand",
+                         labels=c("- (reverse)","+ (forward)"))
+
+```
+
+For both libraries (24 & 34), the R1 file contained more reads assigned to the reverse strand, while the R2 files have the majority of their reads assigned to the forward strand. Because of this, these libraries are strand-specific. 
+
+
+
