@@ -11,3 +11,4 @@ Basic UNIX commands are shown in "ho_sf-seq" but python scripts and slurm script
 
 Outputs from scripts and commands are organized in folders by the corresponding "Parts" of the assignment.
 
+r code is supressed in rendered .html & .pdf files but can be viewed in .Rmd 
